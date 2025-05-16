@@ -7,10 +7,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    // Perbaikan URL BASE untuk konsistensi dengan endpoint
-    private const val BASE_URL = "https://api.tif.uin-suska.ac.id/setoran-dev/v1/"
-    private const val KC_URL = "https://id.tif.uin-suska.ac.id"
-    // Tambahkan API key statis jika diperlukan
+    const val BASE_URL = "https://api.tif.uin-suska.ac.id/setoran-dev/v1/"
+    const val KC_URL = "https://id.tif.uin-suska.ac.id"
     private const val API_KEY = "aqJp3xnXKudgC7RMOshEQP7ZoVKWzoSl"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {

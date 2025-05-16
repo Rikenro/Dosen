@@ -1,10 +1,12 @@
 package app.kelompok6.dosen.screen
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -61,7 +63,7 @@ fun DashboardScreen(navController: NavController) {
                 when (val state = dashboardState) {
                     is DashboardState.Loading -> {
                         CircularProgressIndicator(
-                            modifier = Modifier.align(androidx.compose.ui.Alignment.CenterHorizontally)
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
                         )
                     }
                     is DashboardState.Success -> {
@@ -83,6 +85,10 @@ fun DashboardScreen(navController: NavController) {
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 4.dp)
+                                        .clickable {
+                                            // Navigasi ke DetailSetoranScreen
+                                            navController.navigate("detail_setoran/${mahasiswa.nim}")
+                                        }
                                 ) {
                                     Column(modifier = Modifier.padding(8.dp)) {
                                         Text("Nama: ${mahasiswa.nama}", style = MaterialTheme.typography.bodyMedium)
@@ -95,6 +101,14 @@ fun DashboardScreen(navController: NavController) {
                                         )
                                         mahasiswa.info_setoran.tgl_terakhir_setor?.let {
                                             Text("Terakhir Setor: $it", style = MaterialTheme.typography.bodyMedium)
+                                        }
+                                        TextButton(
+                                            onClick = {
+                                                navController.navigate("detail_setoran/${mahasiswa.nim}")
+                                            },
+                                            modifier = Modifier.align(Alignment.End)
+                                        ) {
+                                            Text("Lihat Detail Setoran")
                                         }
                                     }
                                 }

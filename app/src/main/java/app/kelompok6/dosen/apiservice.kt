@@ -2,8 +2,6 @@ package app.kelompok6.dosen
 
 import retrofit2.Response
 import retrofit2.http.*
-import app.kelompok6.dosen.AuthResponse
-import app.kelompok6.dosen.PAResponse
 
 interface ApiService {
 
@@ -27,16 +25,28 @@ interface ApiService {
         @Field("refresh_token") refreshToken: String
     ): Response<AuthResponse>
 
-    // Metode ini diperbaiki untuk konsistensi path dengan RetrofitClient BASE_URL
     @GET("dosen/pa-saya")
     suspend fun getPaSaya(
         @Header("Authorization") token: String
     ): Response<PAResponse>
 
-    // Metode alternatif jika diperlukan dengan apikey
     @GET("dosen/pa-saya")
     suspend fun getPaSayaWithApiKey(
         @Header("Authorization") token: String,
         @Query("apikey") apiKey: String
     ): Response<PAResponse>
+
+    // Endpoint untuk mengirim validasi setoran
+    @POST("mahasiswa/setoran/{nim}")
+    suspend fun simpanSetoran(
+        @Header("Authorization") token: String,
+        @Path("nim") nim: String,
+        @Body request: SetoranRequest
+    ): Response<SetoranResponse>
+
+    @GET("mahasiswa/setoran/{nim}")
+    suspend fun getDetailSetoran(
+        @Header("Authorization") token: String,
+        @Path("nim") nim: String
+    ): Response<DetailSetoranResponse>
 }
