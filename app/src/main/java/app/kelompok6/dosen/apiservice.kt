@@ -36,7 +36,6 @@ interface ApiService {
         @Query("apikey") apiKey: String
     ): Response<PAResponse>
 
-    // Endpoint untuk mengirim validasi setoran
     @POST("mahasiswa/setoran/{nim}")
     suspend fun simpanSetoran(
         @Header("Authorization") token: String,
@@ -49,4 +48,13 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("nim") nim: String
     ): Response<DetailSetoranResponse>
+
+    @Headers("Content-Type: application/json")
+    @HTTP(method = "DELETE", path = "mahasiswa/setoran/{nim}", hasBody = true)
+    suspend fun deleteSetoran(
+        @Header("Authorization") token: String,
+        @Path("nim") nim: String,
+        @Query("id") id: String,
+        @Body request: DeleteSetoranRequest
+    ): Response<SetoranResponse>
 }

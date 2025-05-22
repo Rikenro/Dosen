@@ -52,10 +52,9 @@ data class RingkasanSetoran(
 
 data class DetailKomponenSetoran(
     val id: String,
+    val id_komponen_setoran: String,
     val nama: String,
-    val external_id: String,
     val nama_arab: String,
     val label: String,
-    val sudah_setor: Boolean,
-    val info_setoran: Any? // Info setoran, null dalam contoh
+    val sudah_setor: Boolean
 )

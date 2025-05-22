@@ -11,13 +11,21 @@ data class SetoranItem(
     val nilai: Int? = null
 )
 
-// Response class for setoran submission
 data class SetoranResponse(
     val response: Boolean,
     val message: String
 )
 
-data class KomponenSetoran(
+data class DeleteSetoranRequest(
+    val data_setoran: List<DeleteSetoranItem>
+)
+
+data class DeleteSetoranItem(
+    val id: String? = null,
     val id_komponen_setoran: String,
     val nama_komponen_setoran: String
+)
+data class DeleteSetoranResponse(
+    val response: Boolean,
+    val message: String
 )

@@ -15,6 +15,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import app.kelompok6.dosen.DetailKomponenSetoran
 import app.kelompok6.dosen.SetoranItem
+import app.kelompok6.dosen.SetoranRequest
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,13 +31,16 @@ fun DetailSetoranScreen(navController: NavController, nim: String?) {
     var selectedKomponen by remember { mutableStateOf<List<DetailKomponenSetoran>>(emptyList()) }
 
     LaunchedEffect(nim) {
-        if (nim != null) {
+        if (nim != null && nim.matches(Regex("\\d{11}"))) {
             Log.d("DetailSetoranScreen", "Fetching detail for NIM: $nim")
             setoranViewModel.fetchDetailSetoran(nim)
+        } else {
+            scope.launch {
+                snackbarHostState.showSnackbar("NIM tidak valid.")
+            }
         }
     }
 
-    // Handle setoran state untuk menampilkan pesan sukses/gagal
     LaunchedEffect(setoranState) {
         when (val state = setoranState) {
             is SetoranState.Success -> {
@@ -44,7 +48,7 @@ fun DetailSetoranScreen(navController: NavController, nim: String?) {
                     snackbarHostState.showSnackbar(state.data.message)
                     selectedKomponen = emptyList()
                     setoranViewModel.resetState()
-                    nim?.let { setoranViewModel.fetchDetailSetoran(it) } // Refresh status surah
+                    nim?.let { setoranViewModel.fetchDetailSetoran(it) }
                 }
             }
             is SetoranState.Error -> {
@@ -67,7 +71,6 @@ fun DetailSetoranScreen(navController: NavController, nim: String?) {
                     }
                 },
                 actions = {
-                    // Tombol Simpan hanya muncul jika ada surah yang dipilih
                     if (selectedKomponen.isNotEmpty()) {
                         Button(
                             onClick = {
@@ -83,7 +86,7 @@ fun DetailSetoranScreen(navController: NavController, nim: String?) {
                                                 nama_komponen_setoran = komponen.nama
                                             )
                                         }
-                                        setoranViewModel.submitSetoran(nim, setoranItems) // Gunakan nim dari parameter
+                                        setoranViewModel.submitSetoran(nim, setoranItems)
                                     }
                                 }
                             },
@@ -121,7 +124,6 @@ fun DetailSetoranScreen(navController: NavController, nim: String?) {
                         Log.d("DetailSetoranScreen", "Data received: ${data.setoran.detail.size} components, " +
                                 "Unvalidated: ${data.setoran.detail.count { !it.sudah_setor }}")
 
-                        // Informasi Mahasiswa
                         Text("Nama: ${data.info.nama}", style = MaterialTheme.typography.titleLarge)
                         Text("NIM: ${data.info.nim}", style = MaterialTheme.typography.bodyLarge)
                         Text("Email: ${data.info.email}", style = MaterialTheme.typography.bodyLarge)
@@ -129,14 +131,12 @@ fun DetailSetoranScreen(navController: NavController, nim: String?) {
                         Text("Semester: ${data.info.semester}", style = MaterialTheme.typography.bodyLarge)
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Informasi Dosen PA
                         Text("Dosen PA:", style = MaterialTheme.typography.titleMedium)
                         Text("Nama: ${data.info.dosen_pa.nama}", style = MaterialTheme.typography.bodyLarge)
                         Text("NIP: ${data.info.dosen_pa.nip}", style = MaterialTheme.typography.bodyLarge)
                         Text("Email: ${data.info.dosen_pa.email}", style = MaterialTheme.typography.bodyLarge)
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Ringkasan Setoran
                         Text("Ringkasan Setoran:", style = MaterialTheme.typography.titleMedium)
                         Text("Total Wajib Setor: ${data.setoran.info_dasar.total_wajib_setor}")
                         Text("Total Sudah Setor: ${data.setoran.info_dasar.total_sudah_setor}")
@@ -147,33 +147,36 @@ fun DetailSetoranScreen(navController: NavController, nim: String?) {
                         } ?: Text("Terakhir Setor: ${data.setoran.info_dasar.terakhir_setor}")
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // Daftar Surah untuk Validasi
-                        Text("Daftar Surah untuk Validasi:", style = MaterialTheme.typography.titleMedium)
-                        val surahsToValidate = data.setoran.detail.filter { !it.sudah_setor }
-                        if (surahsToValidate.isEmpty()) {
+                        Text("Daftar Surah:", style = MaterialTheme.typography.titleMedium)
+                        val allSurahs = data.setoran.detail
+                        if (allSurahs.isEmpty()) {
                             Text(
-                                "Tidak ada surah yang dapat divalidasi (semua sudah disetor).",
+                                "Tidak ada surah yang tersedia.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.align(Alignment.CenterHorizontally)
                             )
                         } else {
                             LazyColumn {
-                                items(surahsToValidate) { komponen ->
+                                items(allSurahs) { komponen ->
                                     Card(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(vertical = 4.dp)
-                                            .clickable {
-                                                Log.d("DetailSetoranScreen", "Clicked: ${komponen.nama}, Selected: ${selectedKomponen.contains(komponen)}")
-                                                selectedKomponen = if (komponen in selectedKomponen) {
-                                                    selectedKomponen - komponen
-                                                } else {
-                                                    selectedKomponen + komponen
+                                            .clickable(enabled = !komponen.sudah_setor) {
+                                                if (!komponen.sudah_setor) {
+                                                    Log.d("DetailSetoranScreen", "Clicked: ${komponen.nama}, Selected: ${selectedKomponen.contains(komponen)}")
+                                                    selectedKomponen = if (komponen in selectedKomponen) {
+                                                        selectedKomponen - komponen
+                                                    } else {
+                                                        selectedKomponen + komponen
+                                                    }
+                                                    Log.d("DetailSetoranScreen", "Selected components: ${selectedKomponen.size}")
                                                 }
-                                                Log.d("DetailSetoranScreen", "Selected components: ${selectedKomponen.size}")
                                             },
                                         colors = CardDefaults.cardColors(
-                                            containerColor = if (komponen in selectedKomponen) {
+                                            containerColor = if (komponen.sudah_setor) {
+                                                MaterialTheme.colorScheme.secondaryContainer
+                                            } else if (komponen in selectedKomponen) {
                                                 MaterialTheme.colorScheme.primaryContainer
                                             } else {
                                                 MaterialTheme.colorScheme.surface
@@ -184,17 +187,50 @@ fun DetailSetoranScreen(navController: NavController, nim: String?) {
                                             modifier = Modifier
                                                 .padding(8.dp)
                                                 .fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.SpaceBetween
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Column {
                                                 Text("Nama: ${komponen.nama}")
                                                 Text("Nama Arab: ${komponen.nama_arab}")
                                                 Text("Kategori: ${komponen.label}")
+                                                Text("Status: ${if (komponen.sudah_setor) "Sudah Divalidasi" else "Belum Divalidasi"}")
                                             }
-                                            Text(
-                                                text = if (komponen in selectedKomponen) "Dipilih" else "Pilih",
-                                                color = MaterialTheme.colorScheme.primary
-                                            )
+                                            if (komponen.sudah_setor) {
+                                                Button(
+                                                    onClick = {
+                                                        scope.launch {
+                                                            if (snackbarHostState.showSnackbar(
+                                                                    message = "Yakin ingin membatalkan validasi untuk surah ${komponen.nama}?",
+                                                                    actionLabel = "Batalkan"
+                                                                ) == SnackbarResult.ActionPerformed && nim != null
+                                                            ) {
+                                                                setoranViewModel.deleteSetoran(
+                                                                    nim = nim,
+                                                                    idSetoran = komponen.id, // Gunakan komponen.id sebagai ID setoran
+                                                                    idKomponenSetoran = komponen.id, // ID komponen sama dengan ID setoran untuk kasus ini
+                                                                    namaKomponenSetoran = komponen.nama
+                                                                )
+                                                            } else if (nim == null) {
+                                                                snackbarHostState.showSnackbar("NIM tidak valid. Tidak dapat membatalkan validasi.")
+                                                            }
+                                                        }
+                                                    },
+                                                    enabled = setoranState !is SetoranState.Loading,
+                                                    colors = ButtonDefaults.buttonColors(
+                                                        containerColor = MaterialTheme.colorScheme.error,
+                                                        contentColor = MaterialTheme.colorScheme.onError
+                                                    ),
+                                                    modifier = Modifier.padding(end = 8.dp)
+                                                ) {
+                                                    Text("Batalkan")
+                                                }
+                                            } else {
+                                                Text(
+                                                    text = if (komponen in selectedKomponen) "Dipilih" else "Pilih",
+                                                    color = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
                                         }
                                     }
                                 }
