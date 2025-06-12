@@ -1,6 +1,7 @@
 package app.kelompok6.dosen.screen
 
 import android.util.Log
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -9,11 +10,19 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import app.kelompok6.dosen.DetailKomponenSetoran
+import app.kelompok6.dosen.Mahasiswa
 import kotlinx.coroutines.launch
 
 @Composable
@@ -25,6 +34,7 @@ fun DetailSetoranScreen(navController: NavController, nim: String?) {
     val setoranState by setoranViewModel.setoranState.collectAsState()
 
     var selectedNim by remember { mutableStateOf<String?>(null) }
+    var selectedAngkatan by remember { mutableStateOf<String?>(null) }
     var isSurahView by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -190,56 +200,57 @@ fun DetailSetoranScreen(navController: NavController, nim: String?) {
                                         modifier = Modifier.align(Alignment.CenterHorizontally)
                                     )
                                 } else {
+                                    // Group students by angkatan and sort descending (newest first)
+                                    val groupedMahasiswa = mahasiswaList
+                                        .groupBy { it.angkatan }
+                                        .toSortedMap(reverseOrder())
+
                                     LazyColumn {
-                                        items(mahasiswaList) { mahasiswa ->
-                                            Card(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .padding(vertical = 4.dp)
-                                                    .clickable {
-                                                        Log.d(TAG, "Kartu mahasiswa diklik: ${mahasiswa.nim}")
-                                                        selectedNim = mahasiswa.nim
-                                                    },
-                                                colors = CardDefaults.cardColors(
-                                                    containerColor = MaterialTheme.colorScheme.surface
-                                                )
-                                            ) {
-                                                Column(
+                                        groupedMahasiswa.forEach { (angkatan, mahasiswaInAngkatan) ->
+                                            // Header for each angkatan (clickable card)
+                                            item {
+                                                Card(
                                                     modifier = Modifier
-                                                        .padding(8.dp)
                                                         .fillMaxWidth()
+                                                        .padding(vertical = 4.dp)
+                                                        .clickable {
+                                                            selectedAngkatan = if (selectedAngkatan == angkatan) null else angkatan
+                                                        },
+                                                    colors = CardDefaults.cardColors(
+                                                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                                                    )
                                                 ) {
-                                                    Text(
-                                                        text = "Nama: ${mahasiswa.nama}",
-                                                        style = MaterialTheme.typography.bodyLarge
-                                                    )
-                                                    Text(
-                                                        text = "NIM: ${mahasiswa.nim}",
-                                                        style = MaterialTheme.typography.bodyMedium
-                                                    )
-                                                    Text(
-                                                        text = "Angkatan: ${mahasiswa.angkatan}",
-                                                        style = MaterialTheme.typography.bodyMedium
-                                                    )
-                                                    Spacer(modifier = Modifier.height(8.dp))
-                                                    Text(
-                                                        text = "Progres Hafalan: ${mahasiswa.info_setoran.persentase_progres_setor}%",
-                                                        style = MaterialTheme.typography.bodyMedium
-                                                    )
-                                                    LinearProgressIndicator(
-                                                        progress = { mahasiswa.info_setoran.persentase_progres_setor / 100f },
+                                                    Row(
                                                         modifier = Modifier
                                                             .fillMaxWidth()
-                                                            .height(8.dp),
-                                                        color = MaterialTheme.colorScheme.primary,
-                                                        trackColor = MaterialTheme.colorScheme.surfaceVariant
-                                                    )
-                                                    mahasiswa.info_setoran.tgl_terakhir_setor?.let {
+                                                            .padding(8.dp),
+                                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                                        verticalAlignment = Alignment.CenterVertically
+                                                    ) {
                                                         Text(
-                                                            text = "Terakhir Setor: $it",
-                                                            style = MaterialTheme.typography.bodyMedium
+                                                            text = "Angkatan $angkatan",
+                                                            style = MaterialTheme.typography.bodyLarge,
+                                                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                                                        )
+                                                        Text(
+                                                            text = "${mahasiswaInAngkatan.size} mahasiswa",
+                                                            style = MaterialTheme.typography.bodyMedium,
+                                                            color = MaterialTheme.colorScheme.onPrimaryContainer
                                                         )
                                                     }
+                                                }
+                                            }
+
+                                            // Show students only if this angkatan is selected
+                                            if (selectedAngkatan == angkatan) {
+                                                items(mahasiswaInAngkatan.sortedBy { it.nama }) { mahasiswa ->
+                                                    MahasiswaCardWithChart(
+                                                        mahasiswa = mahasiswa,
+                                                        onCardClick = {
+                                                            Log.d(TAG, "Kartu mahasiswa diklik: ${mahasiswa.nim}")
+                                                            selectedNim = mahasiswa.nim
+                                                        }
+                                                    )
                                                 }
                                             }
                                         }
@@ -269,6 +280,156 @@ fun DetailSetoranScreen(navController: NavController, nim: String?) {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun MahasiswaCardWithChart(
+    mahasiswa: Mahasiswa,
+    onCardClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .clickable { onCardClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(12.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Left side - Student info
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = mahasiswa.nama,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "NIM: ${mahasiswa.nim}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Angkatan: ${mahasiswa.angkatan}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = "Semester: ${mahasiswa.semester}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text(
+                    text = "Progres Setoran: ${mahasiswa.info_setoran.persentase_progres_setor}%",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+
+                mahasiswa.info_setoran.tgl_terakhir_setor?.let {
+                    Text(
+                        text = "Terakhir Setor: $it",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Right side - Circular Progress Chart
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                CircularProgressChart(
+                    progress = mahasiswa.info_setoran.persentase_progres_setor,
+                    size = 80.dp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "${mahasiswa.info_setoran.persentase_progres_setor}%",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = when {
+                        mahasiswa.info_setoran.persentase_progres_setor >= 80 ->
+                            MaterialTheme.colorScheme.primary
+                        mahasiswa.info_setoran.persentase_progres_setor >= 50 ->
+                            MaterialTheme.colorScheme.tertiary
+                        else -> MaterialTheme.colorScheme.error
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun CircularProgressChart(
+    progress: Float,
+    size: Dp,
+    strokeWidth: Dp = 8.dp
+) {
+    val progressColor = when {
+        progress >= 80 -> MaterialTheme.colorScheme.primary
+        progress >= 50 -> MaterialTheme.colorScheme.tertiary
+        else -> MaterialTheme.colorScheme.error
+    }
+
+    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+
+    Box(
+        modifier = Modifier.size(size),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            val canvasSize = size.toPx()
+            val radius = (canvasSize - strokeWidth.toPx()) / 2
+            val center = Offset(canvasSize / 2, canvasSize / 2)
+
+            // Draw background circle
+            drawCircle(
+                color = trackColor,
+                radius = radius,
+                center = center,
+                style = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
+            )
+
+            // Draw progress arc
+            val sweepAngle = (progress / 100f) * 360f
+            drawArc(
+                color = progressColor,
+                startAngle = -90f, // Start from top
+                sweepAngle = sweepAngle,
+                useCenter = false,
+                topLeft = Offset(
+                    center.x - radius,
+                    center.y - radius
+                ),
+                size = Size(radius * 2, radius * 2),
+                style = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
+            )
+        }
+
+        // Center text with progress percentage
+        Text(
+            text = "$progress%",
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.Bold,
+            color = progressColor
+        )
     }
 }
 

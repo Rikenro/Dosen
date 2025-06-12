@@ -86,7 +86,7 @@ fun Scaffold(
                             }
                         },
                         icon = { Icon(Icons.Default.List, contentDescription = "Surah") },
-                        label = { Text("Surah") }
+                        label = { Text("Mahasiswa") }
                     )
                 }
             }

@@ -31,7 +31,6 @@ fun SetoranScreen(navController: NavController, nimParam: String? = null) {
     var selectedKomponenList by remember { mutableStateOf<List<DetailKomponenSetoran>>(emptyList()) }
     var expanded by remember { mutableStateOf(false) }
 
-    // Pastikan nimParam tidak null sebelum memanggil API
     LaunchedEffect(nimParam) {
         if (nimParam != null && nimParam.matches(Regex("\\d{11}"))) {
             setoranViewModel.fetchDetailSetoran(nimParam)

@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
@@ -110,23 +111,55 @@ fun DashboardScreen(navController: NavController) {
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(vertical = 4.dp, horizontal = 8.dp)
-                                            .clickable {
-                                                navController.navigate("detail_setoran/${mahasiswa.nim}")
-                                            }
                                     ) {
-                                        Column(modifier = Modifier.padding(8.dp)) {
-                                            Text("Nama: ${mahasiswa.nama}", style = MaterialTheme.typography.bodyMedium)
-                                            Text("NIM: ${mahasiswa.nim}", style = MaterialTheme.typography.bodyMedium)
-                                            Text("Angkatan: ${mahasiswa.angkatan}", style = MaterialTheme.typography.bodyMedium)
-                                            Text("Semester: ${mahasiswa.semester}", style = MaterialTheme.typography.bodyMedium)
-                                            Text(
-                                                "Progres Setoran: ${mahasiswa.info_setoran.persentase_progres_setor}%",
-                                                style = MaterialTheme.typography.bodyMedium
-                                            )
-                                            mahasiswa.info_setoran.tgl_terakhir_setor?.let {
-                                                Text("Terakhir Setor: $it", style = MaterialTheme.typography.bodyMedium)
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            // Left side - Student Information
+                                            Column(
+                                                modifier = Modifier
+                                                    .weight(1f) // Takes available space, pushing the chart to the right
+                                            ) {
+                                                Text("Nama: ${mahasiswa.nama}", style = MaterialTheme.typography.bodyMedium)
+                                                Text("NIM: ${mahasiswa.nim}", style = MaterialTheme.typography.bodyMedium)
+                                                Text("Angkatan: ${mahasiswa.angkatan}", style = MaterialTheme.typography.bodyMedium)
+                                                Text("Semester: ${mahasiswa.semester}", style = MaterialTheme.typography.bodyMedium)
+                                                Text(
+                                                    "Progres Setoran: ${mahasiswa.info_setoran.persentase_progres_setor}%",
+                                                    style = MaterialTheme.typography.bodyMedium
+                                                )
+                                                mahasiswa.info_setoran.tgl_terakhir_setor?.let {
+                                                    Text("Terakhir Setor: $it", style = MaterialTheme.typography.bodyMedium)
+                                                }
                                             }
 
+                                            // Right side - Circular Progress Chart
+                                            Column(
+                                                modifier = Modifier
+                                                    .padding(start = 16.dp), // Space between student info and chart
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                CircularProgressChart(
+                                                    progress = mahasiswa.info_setoran.persentase_progres_setor,
+                                                    size = 80.dp
+                                                )
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = "${mahasiswa.info_setoran.persentase_progres_setor}%",
+                                                    style = MaterialTheme.typography.labelMedium,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = when {
+                                                        mahasiswa.info_setoran.persentase_progres_setor >= 80 ->
+                                                            MaterialTheme.colorScheme.primary
+                                                        mahasiswa.info_setoran.persentase_progres_setor >= 50 ->
+                                                            MaterialTheme.colorScheme.tertiary
+                                                        else -> MaterialTheme.colorScheme.error
+                                                    }
+                                                )
+                                            }
                                         }
                                     }
                                 }

@@ -161,7 +161,6 @@ class SetoranViewModel(private val tokenManager: TokenManager) : ViewModel() {
             try {
                 val token = tokenManager.getAccessToken()
                 if (token != null) {
-                    // Validasi bahwa idSetoran tidak null atau kosong
                     if (idSetoran.isNullOrBlank()) {
                         Log.e(TAG, "ID Setoran kosong atau null")
                         _setoranState.value = SetoranState.Error("ID Setoran tidak valid")
