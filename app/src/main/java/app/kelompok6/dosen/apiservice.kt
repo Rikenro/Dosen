@@ -55,6 +55,6 @@ interface ApiService {
         @Header("Authorization") token: String,
         @Path("nim") nim: String,
         @Query("id") id: String,
-        @Body request: DeleteSetoranRequest
+        @Body request: SetoranRequest
     ): Response<SetoranResponse>
 }

@@ -36,7 +36,7 @@ data class InfoSetoran(
     val total_wajib_setor: Int,
     val total_sudah_setor: Int,
     val total_belum_setor: Int,
-    val persentase_progres_setor: Double,
-    val tgl_terakhir_setor: String?, // null jika belum ada
+    val persentase_progres_setor: Float, // Ubah ke Float agar konsisten
+    val tgl_terakhir_setor: String?,
     val terakhir_setor: String
 )

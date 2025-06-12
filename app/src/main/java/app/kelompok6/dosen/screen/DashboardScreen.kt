@@ -14,7 +14,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DashboardScreen(navController: NavController) {
     val context = LocalContext.current
@@ -24,107 +23,133 @@ fun DashboardScreen(navController: NavController) {
     val userName by dashboardViewModel.userName.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    var selectedAngkatan by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         dashboardViewModel.fetchSetoranSaya()
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text("Dashboard Setoran") },
-                actions = {
-                    TextButton(onClick = {
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            userName?.let {
+                Text(
+                    text = "Selamat datang, $it!",
+                    style = MaterialTheme.typography.titleLarge
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(
+                    onClick = {
                         loginViewModel.logout()
                         navController.navigate("login") {
                             popUpTo("dashboard") { inclusive = true }
                         }
-                    }) {
-                        Text("Logout")
                     }
+                ) {
+                    Text("Logout")
                 }
-            )
-        },
-        content = { padding ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .padding(16.dp)
-            ) {
-                userName?.let {
+            }
+            when (val state = dashboardState) {
+                is DashboardState.Loading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                }
+                is DashboardState.Success -> {
+                    val data = state.data.data
                     Text(
-                        text = "Selamat datang, $it!",
-                        style = MaterialTheme.typography.titleLarge
+                        text = "Jumlah Mahasiswa PA: ${data.info_mahasiswa_pa.daftar_mahasiswa.size}",
+                        style = MaterialTheme.typography.titleMedium
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                }
-                when (val state = dashboardState) {
-                    is DashboardState.Loading -> {
-                        CircularProgressIndicator(
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        )
-                    }
-                    is DashboardState.Success -> {
-                        val data = state.data.data
-                        Text("NIP: ${data.nip}", style = MaterialTheme.typography.bodyLarge)
-                        Text("Email: ${data.email}", style = MaterialTheme.typography.bodyLarge)
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("Ringkasan Mahasiswa:", style = MaterialTheme.typography.titleMedium)
-                        LazyColumn {
-                            items(data.info_mahasiswa_pa.ringkasan) { ringkasan ->
-                                Text("${ringkasan.tahun}: ${ringkasan.total} mahasiswa")
-                            }
+                    Text("NIP: ${data.nip}", style = MaterialTheme.typography.bodyLarge)
+                    Text("Email: ${data.email}", style = MaterialTheme.typography.bodyLarge)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Angkatan Mahasiswa:", style = MaterialTheme.typography.titleMedium)
+                    LazyColumn {
+                        data.info_mahasiswa_pa.ringkasan.forEach { ringkasan ->
                             item {
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text("Daftar Mahasiswa:", style = MaterialTheme.typography.titleMedium)
-                            }
-                            items(data.info_mahasiswa_pa.daftar_mahasiswa) { mahasiswa ->
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(vertical = 4.dp)
                                         .clickable {
-                                            // Navigasi ke DetailSetoranScreen
-                                            navController.navigate("detail_setoran/${mahasiswa.nim}")
+                                            selectedAngkatan = if (selectedAngkatan == ringkasan.tahun) null else ringkasan.tahun
                                         }
                                 ) {
-                                    Column(modifier = Modifier.padding(8.dp)) {
-                                        Text("Nama: ${mahasiswa.nama}", style = MaterialTheme.typography.bodyMedium)
-                                        Text("NIM: ${mahasiswa.nim}", style = MaterialTheme.typography.bodyMedium)
-                                        Text("Angkatan: ${mahasiswa.angkatan}", style = MaterialTheme.typography.bodyMedium)
-                                        Text("Semester: ${mahasiswa.semester}", style = MaterialTheme.typography.bodyMedium)
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(8.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                    ) {
                                         Text(
-                                            "Progres Setoran: ${mahasiswa.info_setoran.persentase_progres_setor}%",
+                                            text = "Angkatan ${ringkasan.tahun}",
+                                            style = MaterialTheme.typography.bodyLarge
+                                        )
+                                        Text(
+                                            text = "${ringkasan.total} mahasiswa",
                                             style = MaterialTheme.typography.bodyMedium
                                         )
-                                        mahasiswa.info_setoran.tgl_terakhir_setor?.let {
-                                            Text("Terakhir Setor: $it", style = MaterialTheme.typography.bodyMedium)
-                                        }
-                                        TextButton(
-                                            onClick = {
+                                    }
+                                }
+                            }
+                            if (selectedAngkatan == ringkasan.tahun) {
+                                val studentsInAngkatan = data.info_mahasiswa_pa.daftar_mahasiswa
+                                    .filter { it.angkatan == ringkasan.tahun }
+                                items(studentsInAngkatan) { mahasiswa ->
+                                    Card(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(vertical = 4.dp, horizontal = 8.dp)
+                                            .clickable {
                                                 navController.navigate("detail_setoran/${mahasiswa.nim}")
-                                            },
-                                            modifier = Modifier.align(Alignment.End)
-                                        ) {
-                                            Text("Lihat Detail Setoran")
+                                            }
+                                    ) {
+                                        Column(modifier = Modifier.padding(8.dp)) {
+                                            Text("Nama: ${mahasiswa.nama}", style = MaterialTheme.typography.bodyMedium)
+                                            Text("NIM: ${mahasiswa.nim}", style = MaterialTheme.typography.bodyMedium)
+                                            Text("Angkatan: ${mahasiswa.angkatan}", style = MaterialTheme.typography.bodyMedium)
+                                            Text("Semester: ${mahasiswa.semester}", style = MaterialTheme.typography.bodyMedium)
+                                            Text(
+                                                "Progres Setoran: ${mahasiswa.info_setoran.persentase_progres_setor}%",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                            mahasiswa.info_setoran.tgl_terakhir_setor?.let {
+                                                Text("Terakhir Setor: $it", style = MaterialTheme.typography.bodyMedium)
+                                            }
+
                                         }
                                     }
                                 }
                             }
                         }
                     }
-                    is DashboardState.Error -> {
-                        LaunchedEffect(state) {
-                            scope.launch {
-                                snackbarHostState.showSnackbar(state.message)
-                            }
+                }
+                is DashboardState.Error -> {
+                    LaunchedEffect(state) {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(state.message)
                         }
                     }
-                    else -> {}
+                }
+                is DashboardState.Idle -> {
                 }
             }
         }
-    )
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
+        )
+    }
 }

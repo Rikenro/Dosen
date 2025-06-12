@@ -14,7 +14,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import app.kelompok6.dosen.DetailKomponenSetoran
-import app.kelompok6.dosen.SetoranItem
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,7 +43,7 @@ fun SetoranScreen(navController: NavController, nimParam: String? = null) {
         when (val state = setoranState) {
             is SetoranState.Success -> {
                 scope.launch {
-                    snackbarHostState.showSnackbar(state.data.message)
+                    snackbarHostState.showSnackbar("Setoran berhasil divalidasi")
                     // Reset form fields setelah sukses
                     if (nimParam == null) nim = ""
                     selectedKomponenList = emptyList()
@@ -86,8 +85,15 @@ fun SetoranScreen(navController: NavController, nimParam: String? = null) {
                 if (nimParam == null) {
                     OutlinedTextField(
                         value = nim,
-                        onValueChange = { nim = it },
+                        onValueChange = {
+                            nim = it
+                            // Auto-fetch detail when NIM is valid
+                            if (it.matches(Regex("\\d{11}"))) {
+                                setoranViewModel.fetchDetailSetoran(it)
+                            }
+                        },
                         label = { Text("NIM Mahasiswa") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth()
                     )
                 } else {
@@ -116,9 +122,16 @@ fun SetoranScreen(navController: NavController, nimParam: String? = null) {
                     ) {
                         when (val state = detailSetoranState) {
                             is DetailSetoranState.Success -> {
-                                state.data.data.setoran.detail
+                                val availableKomponen = state.data.data.setoran.detail
                                     .filter { !it.sudah_setor } // Hanya tampilkan yang belum disetor
-                                    .forEach { komponen ->
+
+                                if (availableKomponen.isEmpty()) {
+                                    DropdownMenuItem(
+                                        text = { Text("Semua komponen sudah disetor") },
+                                        onClick = { }
+                                    )
+                                } else {
+                                    availableKomponen.forEach { komponen ->
                                         DropdownMenuItem(
                                             text = { Text(komponen.nama) },
                                             onClick = {
@@ -129,6 +142,7 @@ fun SetoranScreen(navController: NavController, nimParam: String? = null) {
                                             }
                                         )
                                     }
+                                }
                             }
                             is DetailSetoranState.Loading -> {
                                 DropdownMenuItem(
@@ -142,7 +156,12 @@ fun SetoranScreen(navController: NavController, nimParam: String? = null) {
                                     onClick = { }
                                 )
                             }
-                            else -> {}
+                            else -> {
+                                DropdownMenuItem(
+                                    text = { Text("Masukkan NIM terlebih dahulu") },
+                                    onClick = { }
+                                )
+                            }
                         }
                     }
                 }
@@ -173,13 +192,13 @@ fun SetoranScreen(navController: NavController, nimParam: String? = null) {
                     onClick = {
                         val nimToUse = nimParam ?: nim.trim()
                         if (nimToUse.isNotBlank() && nimToUse.matches(Regex("\\d{11}")) && selectedKomponenList.isNotEmpty()) {
-                            val setoranItems = selectedKomponenList.map { komponen ->
-                                SetoranItem(
-                                    id_komponen_setoran = komponen.id,
-                                    nama_komponen_setoran = komponen.nama
+                            selectedKomponenList.forEach { komponen ->
+                                setoranViewModel.postSetoranMahasiswa(
+                                    nim = nimToUse,
+                                    idKomponenSetoran = komponen.id,
+                                    namaKomponenSetoran = komponen.nama
                                 )
                             }
-                            setoranViewModel.submitSetoran(nimToUse, setoranItems)
                         } else {
                             scope.launch {
                                 snackbarHostState.showSnackbar("NIM harus 11 digit angka dan pilih setidaknya satu komponen setoran")
@@ -219,7 +238,12 @@ fun SetoranScreen(navController: NavController, nimParam: String? = null) {
                             modifier = Modifier.align(Alignment.CenterHorizontally)
                         )
                         Button(
-                            onClick = { nimParam?.let { setoranViewModel.fetchDetailSetoran(it) } },
+                            onClick = {
+                                val nimToUse = nimParam ?: nim.trim()
+                                if (nimToUse.isNotBlank() && nimToUse.matches(Regex("\\d{11}"))) {
+                                    setoranViewModel.fetchDetailSetoran(nimToUse)
+                                }
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = 8.dp)

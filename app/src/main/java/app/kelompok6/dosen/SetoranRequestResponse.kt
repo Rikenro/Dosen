@@ -1,31 +1,46 @@
 package app.kelompok6.dosen
 
+import com.google.gson.annotations.SerializedName
+
 data class SetoranRequest(
-    val data_setoran: List<SetoranItem>
+    @SerializedName("data_setoran")
+    val dataSetoran: List<SetoranItem>,
+    @SerializedName("tgl_setoran")
+    val tglSetoran: String? = null
 )
 
 data class SetoranItem(
-    val id_komponen_setoran: String,
-    val nama_komponen_setoran: String,
+    @SerializedName("id")
+    val id: String? = null,
+    @SerializedName("id_setoran")
+    val idSetoran: String? = null, // Untuk DELETE
+    @SerializedName("id_komponen_setoran")
+    val idKomponenSetoran: String,
+    @SerializedName("nama_komponen_setoran")
+    val namaKomponenSetoran: String,
+    @SerializedName("catatan")
     val catatan: String? = null,
+    @SerializedName("nilai")
     val nilai: Int? = null
 )
 
 data class SetoranResponse(
+    @SerializedName("response")
     val response: Boolean,
+    @SerializedName("message")
     val message: String
 )
 
 data class DeleteSetoranRequest(
-    val data_setoran: List<DeleteSetoranItem>
+    @SerializedName("data_setoran")
+    val dataSetoran: List<DeleteSetoranItem>
 )
 
 data class DeleteSetoranItem(
-    val id: String? = null,
-    val id_komponen_setoran: String,
-    val nama_komponen_setoran: String
-)
-data class DeleteSetoranResponse(
-    val response: Boolean,
-    val message: String
+    @SerializedName("id_setoran")
+    val idSetoran: String,
+    @SerializedName("id_komponen_setoran")
+    val idKomponenSetoran: String,
+    @SerializedName("nama_komponen_setoran")
+    val namaKomponenSetoran: String
 )
