@@ -1,15 +1,18 @@
 package app.kelompok6.dosen.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import app.kelompok6.dosen.R
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,9 +37,17 @@ fun LoginScreen(navController: NavController) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
+                Image(
+                    painter = painterResource(id = R.drawable.logouniv), // Ganti 'logo' dengan nama file gambar Anda
+                    contentDescription = "Logo",
+                    modifier = Modifier
+                        .size(300.dp) // Sesuaikan ukuran sesuai kebutuhan
+                        .padding(bottom = 24.dp)
+                )
                 Text(
-                    text = "Login Dosen PA",
-                    style = MaterialTheme.typography.headlineMedium
+                    text = "Aplikasi Setoran Dosen",
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(bottom = 16.dp)
                 )
 
                 Spacer(modifier = Modifier.height(16.dp))

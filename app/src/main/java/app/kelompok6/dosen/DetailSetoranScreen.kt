@@ -6,6 +6,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -102,13 +105,19 @@ fun DetailSetoranScreen(navController: NavController, nim: String?) {
                             navController.navigateUp()
                         }
                     }) {
-                        Text("<")
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Kembali"
+                        )
                     }
+
+                    Text(
+                        text = if (isSurahView) "Hafalan Surah Mahasiswa" else "Daftar Mahasiswa",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(start = 8.dp)
+                    )
                 }
-                Text(
-                    text = if (isSurahView) "Hafalan Surah Mahasiswa" else "Daftar Mahasiswa",
-                    style = MaterialTheme.typography.titleLarge
-                )
+
                 Spacer(modifier = Modifier.height(16.dp))
 
                 when {
@@ -294,7 +303,7 @@ fun MahasiswaCardWithChart(
             .padding(horizontal = 8.dp, vertical = 4.dp)
             .clickable { onCardClick() },
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
@@ -357,18 +366,6 @@ fun MahasiswaCardWithChart(
                     size = 80.dp
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "${mahasiswa.info_setoran.persentase_progres_setor}%",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = when {
-                        mahasiswa.info_setoran.persentase_progres_setor >= 80 ->
-                            MaterialTheme.colorScheme.primary
-                        mahasiswa.info_setoran.persentase_progres_setor >= 50 ->
-                            MaterialTheme.colorScheme.tertiary
-                        else -> MaterialTheme.colorScheme.error
-                    }
-                )
             }
         }
     }
@@ -386,7 +383,7 @@ fun CircularProgressChart(
         else -> MaterialTheme.colorScheme.error
     }
 
-    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+    val trackColor = MaterialTheme.colorScheme.surface
 
     Box(
         modifier = Modifier.size(size),
