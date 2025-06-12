@@ -81,19 +81,19 @@ Hubungkan perangkat atau buka emulator
 Klik tombol Run ▶️
 
 🧭 Panduan Penggunaan
-Login sebagai Dosen
+- Login sebagai Dosen
 
 Masukkan akun dosen yang terdaftar
 
-Lihat Daftar Setoran
+- Lihat Daftar Setoran
 
 Daftar nama mahasiswa dan setoran akan ditampilkan
 
-Tambah Setoran
+- Tambah Setoran
 
 Klik tombol tambah pada surah
 
-Hapus Setoran
+- Hapus Setoran
 
 Klik tombol hapus pada surah yang sudah di validasi
 
